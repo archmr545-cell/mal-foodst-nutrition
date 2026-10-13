@@ -1,98 +1,50 @@
-node-bindings
-=============
-### Helper module for loading your native module's `.node` file
+# buffer-equal-constant-time
 
-This is a helper module for authors of Node.js native addon modules.
-It is basically the "swiss army knife" of `require()`ing your native module's
-`.node` file.
+Constant-time `Buffer` comparison for node.js.  Should work with browserify too.
 
-Throughout the course of Node's native addon history, addons have ended up being
-compiled in a variety of different places, depending on which build tool and which
-version of node was used. To make matters worse, now the `gyp` build tool can
-produce either a __Release__ or __Debug__ build, each being built into different
-locations.
+[![Build Status](https://travis-ci.org/goinstant/buffer-equal-constant-time.png?branch=master)](https://travis-ci.org/goinstant/buffer-equal-constant-time)
 
-This module checks _all_ the possible locations that a native addon would be built
-at, and returns the first one that loads successfully.
-
-
-Installation
-------------
-
-Install with `npm`:
-
-``` bash
-$ npm install --save bindings
+```sh
+  npm install buffer-equal-constant-time
 ```
 
-Or add it to the `"dependencies"` section of your `package.json` file.
+# Usage
 
+```js
+  var bufferEq = require('buffer-equal-constant-time');
 
-Example
--------
-
-`require()`ing the proper bindings file for the current node version, platform
-and architecture is as simple as:
-
-``` js
-var bindings = require('bindings')('binding.node')
-
-// Use your bindings defined in your C files
-bindings.your_c_function()
+  var a = new Buffer('asdf');
+  var b = new Buffer('asdf');
+  if (bufferEq(a,b)) {
+    // the same!
+  } else {
+    // different in at least one byte!
+  }
 ```
 
+If you'd like to install an `.equal()` method onto the node.js `Buffer` and
+`SlowBuffer` prototypes:
 
-Nice Error Output
------------------
+```js
+  require('buffer-equal-constant-time').install();
 
-When the `.node` file could not be loaded, `node-bindings` throws an Error with
-a nice error message telling you exactly what was tried. You can also check the
-`err.tries` Array property.
-
-```
-Error: Could not load the bindings file. Tried:
- → /Users/nrajlich/ref/build/binding.node
- → /Users/nrajlich/ref/build/Debug/binding.node
- → /Users/nrajlich/ref/build/Release/binding.node
- → /Users/nrajlich/ref/out/Debug/binding.node
- → /Users/nrajlich/ref/Debug/binding.node
- → /Users/nrajlich/ref/out/Release/binding.node
- → /Users/nrajlich/ref/Release/binding.node
- → /Users/nrajlich/ref/build/default/binding.node
- → /Users/nrajlich/ref/compiled/0.8.2/darwin/x64/binding.node
-    at bindings (/Users/nrajlich/ref/node_modules/bindings/bindings.js:84:13)
-    at Object.<anonymous> (/Users/nrajlich/ref/lib/ref.js:5:47)
-    at Module._compile (module.js:449:26)
-    at Object.Module._extensions..js (module.js:467:10)
-    at Module.load (module.js:356:32)
-    at Function.Module._load (module.js:312:12)
-    ...
+  var a = new Buffer('asdf');
+  var b = new Buffer('asdf');
+  if (a.equal(b)) {
+    // the same!
+  } else {
+    // different in at least one byte!
+  }
 ```
 
-The searching for the `.node` file will originate from the first directory in which has a `package.json` file is found.
+To get rid of the installed `.equal()` method, call `.restore()`:
 
-License
--------
+```js
+  require('buffer-equal-constant-time').restore();
+```
 
-(The MIT License)
+# Legal
 
-Copyright (c) 2012 Nathan Rajlich &lt;nathan@tootallnate.net&gt;
+&copy; 2013 GoInstant Inc., a salesforce.com company
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-'Software'), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Licensed under the BSD 3-clause license.

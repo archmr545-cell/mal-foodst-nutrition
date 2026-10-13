@@ -1,28 +1,21 @@
 {
-  "name": "bindings",
-  "description": "Helper module for loading your native module's .node file",
+  "name": "buffer-equal-constant-time",
+  "version": "1.0.1",
+  "description": "Constant-time comparison of Buffers",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test.js"
+  },
+  "repository": "git@github.com:goinstant/buffer-equal-constant-time.git",
   "keywords": [
-    "native",
-    "addon",
-    "bindings",
-    "gyp",
-    "waf",
-    "c",
-    "c++"
+    "buffer",
+    "equal",
+    "constant-time",
+    "crypto"
   ],
-  "version": "1.5.0",
-  "author": "Nathan Rajlich <nathan@tootallnate.net> (http://tootallnate.net)",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/TooTallNate/node-bindings.git"
-  },
-  "main": "./bindings.js",
-  "bugs": {
-    "url": "https://github.com/TooTallNate/node-bindings/issues"
-  },
-  "homepage": "https://github.com/TooTallNate/node-bindings",
-  "license": "MIT",
-  "dependencies": {
-    "file-uri-to-path": "1.0.0"
+  "author": "GoInstant Inc., a salesforce.com company",
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "mocha": "~1.15.1"
   }
 }
