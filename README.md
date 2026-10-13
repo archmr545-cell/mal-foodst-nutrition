@@ -1,99 +1,140 @@
-# better-sqlite3 [![Build Status](https://github.com/JoshuaWise/better-sqlite3/actions/workflows/build.yml/badge.svg)](https://github.com/JoshuaWise/better-sqlite3/actions/workflows/build.yml?query=branch%3Amaster)
+# accepts
 
-The fastest and simplest library for SQLite in Node.js.
+[![NPM Version][npm-version-image]][npm-url]
+[![NPM Downloads][npm-downloads-image]][npm-url]
+[![Node.js Version][node-version-image]][node-version-url]
+[![Build Status][github-actions-ci-image]][github-actions-ci-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
 
-- Full transaction support
-- High performance, efficiency, and safety
-- Easy-to-use synchronous API *(better concurrency than an asynchronous API... yes, you read that correctly)*
-- Support for user-defined functions, aggregates, virtual tables, and extensions
-- 64-bit integers *(invisible until you need them)*
-- Worker thread support *(for large/slow queries)*
+Higher level content negotiation based on [negotiator](https://www.npmjs.com/package/negotiator).
+Extracted from [koa](https://www.npmjs.com/package/koa) for general use.
 
-## Help this project stay strong! &#128170;
+In addition to negotiator, it allows:
 
-`better-sqlite3` is used by thousands of developers and engineers on a daily basis. Long nights and weekends were spent keeping this project strong and dependable, with no ask for compensation or funding, until now. If your company uses `better-sqlite3`, ask your manager to consider supporting the project:
-
-- [Become a GitHub sponsor](https://github.com/sponsors/JoshuaWise)
-- [Become a backer on Patreon](https://www.patreon.com/joshuawise)
-- [Make a one-time donation on PayPal](https://www.paypal.me/joshuathomaswise)
-
-## How other libraries compare
-
-|   |select 1 row &nbsp;`get()`&nbsp;|select 100 rows &nbsp;&nbsp;`all()`&nbsp;&nbsp;|select 100 rows `iterate()` 1-by-1|insert 1 row `run()`|insert 100 rows in a transaction|
-|---|---|---|---|---|---|
-|better-sqlite3|1x|1x|1x|1x|1x|
-|[sqlite](https://www.npmjs.com/package/sqlite) and [sqlite3](https://www.npmjs.com/package/sqlite3)|11.7x slower|2.9x slower|24.4x slower|2.8x slower|15.6x slower|
-
-> You can verify these results by [running the benchmark yourself](./docs/benchmark.md).
+- Allows types as an array or arguments list, ie `(['text/html', 'application/json'])`
+  as well as `('text/html', 'application/json')`.
+- Allows type shorthands such as `json`.
+- Returns `false` when no types match
+- Treats non-existent headers as `*`
 
 ## Installation
 
-```bash
-npm install better-sqlite3
+This is a [Node.js](https://nodejs.org/en/) module available through the
+[npm registry](https://www.npmjs.com/). Installation is done using the
+[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+
+```sh
+$ npm install accepts
 ```
 
-> Requires a [currently supported Node.js](https://nodejs.org/en/about/previous-releases) version. Prebuilt binaries are available for [LTS versions](https://nodejs.org/en/about/previous-releases). If you have trouble installing, check the [troubleshooting guide](./docs/troubleshooting.md).
-
-## Usage
+## API
 
 ```js
-const db = require('better-sqlite3')('foobar.db', options);
-
-const row = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
-console.log(row.firstName, row.lastName, row.email);
+var accepts = require('accepts')
 ```
 
-Though not required, [it is generally important to set the WAL pragma for performance reasons](https://github.com/WiseLibs/better-sqlite3/blob/master/docs/performance.md).
+### accepts(req)
+
+Create a new `Accepts` object for the given `req`.
+
+#### .charset(charsets)
+
+Return the first accepted charset. If nothing in `charsets` is accepted,
+then `false` is returned.
+
+#### .charsets()
+
+Return the charsets that the request accepts, in the order of the client's
+preference (most preferred first).
+
+#### .encoding(encodings)
+
+Return the first accepted encoding. If nothing in `encodings` is accepted,
+then `false` is returned.
+
+#### .encodings()
+
+Return the encodings that the request accepts, in the order of the client's
+preference (most preferred first).
+
+#### .language(languages)
+
+Return the first accepted language. If nothing in `languages` is accepted,
+then `false` is returned.
+
+#### .languages()
+
+Return the languages that the request accepts, in the order of the client's
+preference (most preferred first).
+
+#### .type(types)
+
+Return the first accepted type (and it is returned as the same text as what
+appears in the `types` array). If nothing in `types` is accepted, then `false`
+is returned.
+
+The `types` array can contain full MIME types or file extensions. Any value
+that is not a full MIME type is passed to `require('mime-types').lookup`.
+
+#### .types()
+
+Return the types that the request accepts, in the order of the client's
+preference (most preferred first).
+
+## Examples
+
+### Simple type negotiation
+
+This simple example shows how to use `accepts` to return a different typed
+respond body based on what the client wants to accept. The server lists it's
+preferences in order and will get back the best match between the client and
+server.
 
 ```js
-db.pragma('journal_mode = WAL');
+var accepts = require('accepts')
+var http = require('http')
+
+function app (req, res) {
+  var accept = accepts(req)
+
+  // the order of this list is significant; should be server preferred order
+  switch (accept.type(['json', 'html'])) {
+    case 'json':
+      res.setHeader('Content-Type', 'application/json')
+      res.write('{"hello":"world!"}')
+      break
+    case 'html':
+      res.setHeader('Content-Type', 'text/html')
+      res.write('<b>hello, world!</b>')
+      break
+    default:
+      // the fallback is text/plain, so no need to specify it above
+      res.setHeader('Content-Type', 'text/plain')
+      res.write('hello, world!')
+      break
+  }
+
+  res.end()
+}
+
+http.createServer(app).listen(3000)
 ```
 
-##### In ES6 module notation:
-
-```js
-import Database from 'better-sqlite3';
-const db = new Database('foobar.db', options);
-db.pragma('journal_mode = WAL');
+You can test this out with the cURL program:
+```sh
+curl -I -H'Accept: text/html' http://localhost:3000/
 ```
 
-## Why should I use this instead of [node-sqlite3](https://github.com/mapbox/node-sqlite3)?
+## License
 
-- `node-sqlite3` uses asynchronous APIs for tasks that are either CPU-bound or serialized. That's not only bad design, but it wastes tons of resources. It also causes [mutex thrashing](https://en.wikipedia.org/wiki/Resource_contention) which has devastating effects on performance.
-- `node-sqlite3` exposes low-level (C language) memory management functions. `better-sqlite3` does it the JavaScript way, allowing the garbage collector to worry about memory management.
-- `better-sqlite3` is simpler to use, and it provides nice utilities for some operations that are very difficult or impossible in `node-sqlite3`.
-- `better-sqlite3` is much faster than `node-sqlite3` in most cases, and just as fast in all other cases.
+[MIT](LICENSE)
 
-#### When is this library not appropriate?
-
-In most cases, if you're attempting something that cannot be reasonably accomplished with `better-sqlite3`, it probably cannot be reasonably accomplished with SQLite in general. For example, if you're executing queries that take one second to complete, and you expect to have many concurrent users executing those queries, no amount of asynchronicity will save you from SQLite's serialized nature. Fortunately, SQLite is very *very* fast. With proper indexing, we've been able to achieve upward of 2000 queries per second with 5-way-joins in a 60 GB database, where each query was handling 5–50 kilobytes of real data.
-
-If you have a performance problem, the most likely causes are inefficient queries, improper indexing, or a lack of [WAL mode](./docs/performance.md)—not `better-sqlite3` itself. However, there are some cases where `better-sqlite3` could be inappropriate:
-
-- If you expect a high volume of concurrent reads each returning many megabytes of data (i.e., videos)
-- If you expect a high volume of concurrent writes (i.e., a social media site)
-- If your database's size is near the terabyte range
-
-For these situations, you should probably use a full-fledged RDBMS such as [PostgreSQL](https://www.postgresql.org/).
-
-## Upgrading
-
-Upgrading your `better-sqlite3` dependency can potentially introduce breaking changes, either in the `better-sqlite3` API (if you upgrade to a new [major version](https://semver.org/)), or between your existing database(s) and the underlying version of SQLite. Before upgrading, review:
-
-* [`better-sqlite3` release notes](https://github.com/WiseLibs/better-sqlite3/releases)
-* [SQLite release history](https://www.sqlite.org/changes.html)
-
-# Documentation
-
-- [API documentation](./docs/api.md)
-- [Performance](./docs/performance.md) (also see [benchmark results](./docs/benchmark.md))
-- [64-bit integer support](./docs/integer.md)
-- [Worker thread support](./docs/threads.md)
-- [Unsafe mode (advanced)](./docs/unsafe.md)
-- [SQLite compilation (advanced)](./docs/compilation.md)
-- [Contribution rules](./docs/contribution.md)
-- [Code of conduct](./docs/conduct.md)
-
-# License
-
-[MIT](./LICENSE)
+[coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/accepts/master
+[coveralls-url]: https://coveralls.io/r/jshttp/accepts?branch=master
+[github-actions-ci-image]: https://badgen.net/github/checks/jshttp/accepts/master?label=ci
+[github-actions-ci-url]: https://github.com/jshttp/accepts/actions/workflows/ci.yml
+[node-version-image]: https://badgen.net/npm/node/accepts
+[node-version-url]: https://nodejs.org/en/download
+[npm-downloads-image]: https://badgen.net/npm/dm/accepts
+[npm-url]: https://npmjs.org/package/accepts
+[npm-version-image]: https://badgen.net/npm/v/accepts
