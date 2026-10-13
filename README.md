@@ -1,140 +1,98 @@
-# accepts
+node-bindings
+=============
+### Helper module for loading your native module's `.node` file
 
-[![NPM Version][npm-version-image]][npm-url]
-[![NPM Downloads][npm-downloads-image]][npm-url]
-[![Node.js Version][node-version-image]][node-version-url]
-[![Build Status][github-actions-ci-image]][github-actions-ci-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+This is a helper module for authors of Node.js native addon modules.
+It is basically the "swiss army knife" of `require()`ing your native module's
+`.node` file.
 
-Higher level content negotiation based on [negotiator](https://www.npmjs.com/package/negotiator).
-Extracted from [koa](https://www.npmjs.com/package/koa) for general use.
+Throughout the course of Node's native addon history, addons have ended up being
+compiled in a variety of different places, depending on which build tool and which
+version of node was used. To make matters worse, now the `gyp` build tool can
+produce either a __Release__ or __Debug__ build, each being built into different
+locations.
 
-In addition to negotiator, it allows:
+This module checks _all_ the possible locations that a native addon would be built
+at, and returns the first one that loads successfully.
 
-- Allows types as an array or arguments list, ie `(['text/html', 'application/json'])`
-  as well as `('text/html', 'application/json')`.
-- Allows type shorthands such as `json`.
-- Returns `false` when no types match
-- Treats non-existent headers as `*`
 
-## Installation
+Installation
+------------
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+Install with `npm`:
 
-```sh
-$ npm install accepts
+``` bash
+$ npm install --save bindings
 ```
 
-## API
+Or add it to the `"dependencies"` section of your `package.json` file.
 
-```js
-var accepts = require('accepts')
+
+Example
+-------
+
+`require()`ing the proper bindings file for the current node version, platform
+and architecture is as simple as:
+
+``` js
+var bindings = require('bindings')('binding.node')
+
+// Use your bindings defined in your C files
+bindings.your_c_function()
 ```
 
-### accepts(req)
 
-Create a new `Accepts` object for the given `req`.
+Nice Error Output
+-----------------
 
-#### .charset(charsets)
+When the `.node` file could not be loaded, `node-bindings` throws an Error with
+a nice error message telling you exactly what was tried. You can also check the
+`err.tries` Array property.
 
-Return the first accepted charset. If nothing in `charsets` is accepted,
-then `false` is returned.
-
-#### .charsets()
-
-Return the charsets that the request accepts, in the order of the client's
-preference (most preferred first).
-
-#### .encoding(encodings)
-
-Return the first accepted encoding. If nothing in `encodings` is accepted,
-then `false` is returned.
-
-#### .encodings()
-
-Return the encodings that the request accepts, in the order of the client's
-preference (most preferred first).
-
-#### .language(languages)
-
-Return the first accepted language. If nothing in `languages` is accepted,
-then `false` is returned.
-
-#### .languages()
-
-Return the languages that the request accepts, in the order of the client's
-preference (most preferred first).
-
-#### .type(types)
-
-Return the first accepted type (and it is returned as the same text as what
-appears in the `types` array). If nothing in `types` is accepted, then `false`
-is returned.
-
-The `types` array can contain full MIME types or file extensions. Any value
-that is not a full MIME type is passed to `require('mime-types').lookup`.
-
-#### .types()
-
-Return the types that the request accepts, in the order of the client's
-preference (most preferred first).
-
-## Examples
-
-### Simple type negotiation
-
-This simple example shows how to use `accepts` to return a different typed
-respond body based on what the client wants to accept. The server lists it's
-preferences in order and will get back the best match between the client and
-server.
-
-```js
-var accepts = require('accepts')
-var http = require('http')
-
-function app (req, res) {
-  var accept = accepts(req)
-
-  // the order of this list is significant; should be server preferred order
-  switch (accept.type(['json', 'html'])) {
-    case 'json':
-      res.setHeader('Content-Type', 'application/json')
-      res.write('{"hello":"world!"}')
-      break
-    case 'html':
-      res.setHeader('Content-Type', 'text/html')
-      res.write('<b>hello, world!</b>')
-      break
-    default:
-      // the fallback is text/plain, so no need to specify it above
-      res.setHeader('Content-Type', 'text/plain')
-      res.write('hello, world!')
-      break
-  }
-
-  res.end()
-}
-
-http.createServer(app).listen(3000)
+```
+Error: Could not load the bindings file. Tried:
+ → /Users/nrajlich/ref/build/binding.node
+ → /Users/nrajlich/ref/build/Debug/binding.node
+ → /Users/nrajlich/ref/build/Release/binding.node
+ → /Users/nrajlich/ref/out/Debug/binding.node
+ → /Users/nrajlich/ref/Debug/binding.node
+ → /Users/nrajlich/ref/out/Release/binding.node
+ → /Users/nrajlich/ref/Release/binding.node
+ → /Users/nrajlich/ref/build/default/binding.node
+ → /Users/nrajlich/ref/compiled/0.8.2/darwin/x64/binding.node
+    at bindings (/Users/nrajlich/ref/node_modules/bindings/bindings.js:84:13)
+    at Object.<anonymous> (/Users/nrajlich/ref/lib/ref.js:5:47)
+    at Module._compile (module.js:449:26)
+    at Object.Module._extensions..js (module.js:467:10)
+    at Module.load (module.js:356:32)
+    at Function.Module._load (module.js:312:12)
+    ...
 ```
 
-You can test this out with the cURL program:
-```sh
-curl -I -H'Accept: text/html' http://localhost:3000/
-```
+The searching for the `.node` file will originate from the first directory in which has a `package.json` file is found.
 
-## License
+License
+-------
 
-[MIT](LICENSE)
+(The MIT License)
 
-[coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/accepts/master
-[coveralls-url]: https://coveralls.io/r/jshttp/accepts?branch=master
-[github-actions-ci-image]: https://badgen.net/github/checks/jshttp/accepts/master?label=ci
-[github-actions-ci-url]: https://github.com/jshttp/accepts/actions/workflows/ci.yml
-[node-version-image]: https://badgen.net/npm/node/accepts
-[node-version-url]: https://nodejs.org/en/download
-[npm-downloads-image]: https://badgen.net/npm/dm/accepts
-[npm-url]: https://npmjs.org/package/accepts
-[npm-version-image]: https://badgen.net/npm/v/accepts
+Copyright (c) 2012 Nathan Rajlich &lt;nathan@tootallnate.net&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
