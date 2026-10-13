@@ -1,22 +1,14 @@
-/// <reference types="node"/>
-import {IncomingMessage} from 'http';
+// Copyright 2017 Lovell Fuller and others.
+// SPDX-License-Identifier: Apache-2.0
 
-/**
-Decompress a HTTP response if needed.
+export const GLIBC: 'glibc';
+export const MUSL: 'musl';
 
-@param response - The HTTP incoming stream with compressed data.
-@returns The decompressed HTTP response stream.
+export function family(): Promise<string | null>;
+export function familySync(): string | null;
 
-@example
-```
-import {http} from 'http';
-import decompressResponse = require('decompress-response');
+export function isNonGlibcLinux(): Promise<boolean>;
+export function isNonGlibcLinuxSync(): boolean;
 
-http.get('https://sindresorhus.com', response => {
-	response = decompressResponse(response);
-});
-```
-*/
-declare function decompressResponse(response: IncomingMessage): IncomingMessage;
-
-export = decompressResponse;
+export function version(): Promise<string | null>;
+export function versionSync(): string | null;
