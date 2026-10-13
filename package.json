@@ -1,44 +1,62 @@
 {
-  "name": "detect-libc",
-  "version": "2.1.2",
-  "description": "Node.js module to detect the C standard library (libc) implementation family and version",
-  "main": "lib/detect-libc.js",
-  "files": [
-    "lib/",
-    "index.d.ts"
-  ],
+  "name": "dotenv",
+  "version": "17.4.2",
+  "description": "Loads environment variables from .env file",
+  "main": "lib/main.js",
+  "types": "lib/main.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/main.d.ts",
+      "require": "./lib/main.js",
+      "default": "./lib/main.js"
+    },
+    "./config": "./config.js",
+    "./config.js": "./config.js",
+    "./lib/env-options": "./lib/env-options.js",
+    "./lib/env-options.js": "./lib/env-options.js",
+    "./lib/cli-options": "./lib/cli-options.js",
+    "./lib/cli-options.js": "./lib/cli-options.js",
+    "./package.json": "./package.json"
+  },
   "scripts": {
-    "test": "semistandard && nyc --reporter=text --check-coverage --branches=100 ava test/unit.js",
-    "changelog": "conventional-changelog -i CHANGELOG.md -s",
-    "bench": "node benchmark/detect-libc",
-    "bench:calls": "node benchmark/call-familySync.js && sleep 1 && node benchmark/call-isNonGlibcLinuxSync.js && sleep 1 && node benchmark/call-versionSync.js"
+    "dts-check": "tsc --project tests/types/tsconfig.json",
+    "lint": "standard",
+    "pretest": "npm run lint && npm run dts-check",
+    "test": "tap run tests/**/*.js --allow-empty-coverage --disable-coverage --timeout=60000",
+    "test:coverage": "tap run tests/**/*.js --show-full-coverage --timeout=60000 --coverage-report=text --coverage-report=lcov",
+    "prerelease": "npm test",
+    "release": "standard-version"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/lovell/detect-libc.git"
+    "url": "git://github.com/motdotla/dotenv.git"
   },
+  "homepage": "https://github.com/motdotla/dotenv#readme",
+  "funding": "https://dotenvx.com",
   "keywords": [
-    "libc",
-    "glibc",
-    "musl"
+    "dotenv",
+    "env",
+    ".env",
+    "environment",
+    "variables",
+    "config",
+    "settings"
   ],
-  "author": "Lovell Fuller <npm@lovell.info>",
-  "contributors": [
-    "Niklas Salmoukas <niklas@salmoukas.com>",
-    "Vinícius Lourenço <vinyygamerlol@gmail.com>"
-  ],
-  "license": "Apache-2.0",
+  "readmeFilename": "README.md",
+  "license": "BSD-2-Clause",
   "devDependencies": {
-    "ava": "^2.4.0",
-    "benchmark": "^2.1.4",
-    "conventional-changelog-cli": "^5.0.0",
-    "eslint-config-standard": "^13.0.1",
-    "nyc": "^15.1.0",
-    "proxyquire": "^2.1.3",
-    "semistandard": "^14.2.3"
+    "@types/node": "^18.11.3",
+    "decache": "^4.6.2",
+    "sinon": "^14.0.1",
+    "standard": "^17.0.0",
+    "standard-version": "^9.5.0",
+    "tap": "^19.2.0",
+    "typescript": "^4.8.4"
   },
   "engines": {
-    "node": ">=8"
+    "node": ">=12"
   },
-  "types": "index.d.ts"
+  "browser": {
+    "fs": false
+  }
 }
