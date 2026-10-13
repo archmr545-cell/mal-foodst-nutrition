@@ -1,47 +1,58 @@
-/**
- * Module dependencies.
- */
+'use strict';
+const {Transform, PassThrough} = require('stream');
+const zlib = require('zlib');
+const mimicResponse = require('mimic-response');
 
-var crypto = require('crypto');
+module.exports = response => {
+	const contentEncoding = (response.headers['content-encoding'] || '').toLowerCase();
 
-/**
- * Sign the given `val` with `secret`.
- *
- * @param {String} val
- * @param {String|NodeJS.ArrayBufferView|crypto.KeyObject} secret
- * @return {String}
- * @api private
- */
+	if (!['gzip', 'deflate', 'br'].includes(contentEncoding)) {
+		return response;
+	}
 
-exports.sign = function(val, secret){
-  if ('string' != typeof val) throw new TypeError("Cookie value must be provided as a string.");
-  if (null == secret) throw new TypeError("Secret key must be provided.");
-  return val + '.' + crypto
-    .createHmac('sha256', secret)
-    .update(val)
-    .digest('base64')
-    .replace(/\=+$/, '');
-};
+	// TODO: Remove this when targeting Node.js 12.
+	const isBrotli = contentEncoding === 'br';
+	if (isBrotli && typeof zlib.createBrotliDecompress !== 'function') {
+		response.destroy(new Error('Brotli is not supported on Node.js < 12'));
+		return response;
+	}
 
-/**
- * Unsign and decode the given `input` with `secret`,
- * returning `false` if the signature is invalid.
- *
- * @param {String} input
- * @param {String|NodeJS.ArrayBufferView|crypto.KeyObject} secret
- * @return {String|Boolean}
- * @api private
- */
+	let isEmpty = true;
 
-exports.unsign = function(input, secret){
-  if ('string' != typeof input) throw new TypeError("Signed cookie string must be provided.");
-  if (null == secret) throw new TypeError("Secret key must be provided.");
-  var tentativeValue = input.slice(0, input.lastIndexOf('.')),
-      expectedInput = exports.sign(tentativeValue, secret),
-      expectedBuffer = Buffer.from(expectedInput),
-      inputBuffer = Buffer.from(input);
-  return (
-    expectedBuffer.length === inputBuffer.length &&
-    crypto.timingSafeEqual(expectedBuffer, inputBuffer)
-   ) ? tentativeValue : false;
+	const checker = new Transform({
+		transform(data, _encoding, callback) {
+			isEmpty = false;
+
+			callback(null, data);
+		},
+
+		flush(callback) {
+			callback();
+		}
+	});
+
+	const finalStream = new PassThrough({
+		autoDestroy: false,
+		destroy(error, callback) {
+			response.destroy();
+
+			callback(error);
+		}
+	});
+
+	const decompressStream = isBrotli ? zlib.createBrotliDecompress() : zlib.createUnzip();
+
+	decompressStream.once('error', error => {
+		if (isEmpty && !response.readable) {
+			finalStream.end();
+			return;
+		}
+
+		finalStream.destroy(error);
+	});
+
+	mimicResponse(response, finalStream);
+	response.pipe(checker).pipe(decompressStream).pipe(finalStream);
+
+	return finalStream;
 };
